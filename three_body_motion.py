@@ -17,14 +17,14 @@ import matplotlib.pyplot as plt
 
 # define the asteroid class
 class Asteriod:
-    xPos = []
-    yPos = []
-    xVel = []
-    yVel = []
-    time = []
-    timeStep = []
-
-    plotArray = []
+    #xPos = []
+    #yPos = []
+    #xVel = []
+    #yVel = []
+    #time = []
+    #timeStep = []
+#
+    #plotArray = []
 
     jupiterMass = .00095458
     mu1 = 1
@@ -61,6 +61,15 @@ class Asteriod:
 
 
     def __init__(self, xPos0, yPos0, xVel0, yVel0, verbose):
+
+        self.xPos = []
+        self.yPos = []
+        self.xVel = []
+        self.yVel = []
+        self.time = []
+        self.timeStep = []
+        self.plotArray = []
+
         self.xPos.append(xPos0)
         self.yPos.append(yPos0)
         self.xVel.append(xVel0)
@@ -164,22 +173,23 @@ class Asteriod:
         print "xPos, {} yPos, {} xVel, {} yVel {} time {}".format(self.xPos[currentStep], self.yPos[currentStep], self.xVel[currentStep], self.yVel[currentStep], self.time[currentStep])
 
     def returnXYArray(self, skip):
-        return self.plotArray[:-skip]
+        return self.plotArray[::skip]
 
     def returnXArray(self,skip):
-        return self.xPos[:-skip]
+        return self.xPos[::skip]
 
 
     def returnYArray(self,skip):
-        return self.yPos[:-skip]
+        return self.yPos[::skip]
 
 
 
 #test = Asteriod(-.51,.88,0.026,0.015, False)
-test = Asteriod(-.52,.91,0.65,0.037, False)
+#test = Asteriod(-.52,.91,0.65,0.037, False)
 #test = Asteriod(-.52,.92,0.078,0.043, False)
-#test = Asteriod(-.51,.88,-0.026,-0.015, False)
-#test = Asteriod(-.53,.92,0.078,0.043, False)
+test = Asteriod(-.51,.88,-0.026,-0.015, False)
+test2 = Asteriod(-.53,.92,0.078,0.043, False)
+
 
 
 totalTime = 1000.0
@@ -191,7 +201,23 @@ print "Total steps: {} Step size: {} Total Time: {}".format(totalSteps,stepSize,
 
 for i in range(totalSteps):
     test.step(stepSize)
-    if(i%int(1.0/stepSize) ==0): test.printPos()
+    test2.step(stepSize)
+    if(i%int(1.0/stepSize) ==0): 
+        test.printPos()
+        test2.printPos()
+
+
+length = len(test.returnXArray(1))
+
+cut = int(length/500000)
+
+length = len(test.returnXArray(cut))
+
+xarr = test.returnXArray(cut)
+yarr = test.returnYArray(cut)
+
+xarr2 = test2.returnXArray(cut*20)
+yarr2 = test2.returnYArray(cut*20)
 
 #pprint.pprint(test.returnXYArray())
 
@@ -206,7 +232,29 @@ for i in range(totalSteps):
 #
 #plt.clf()
 
-plt.scatter(test.returnXArray(100),test.returnYArray(100) , marker='.', alpha=.5, c='r')
+#cut = int(.00001/stepSize)
+
+#length = len(test.returnXArray(1))
+#
+#cut = int(length/500000)
+#
+#length = len(test.returnXArray(cut))
+#
+print length
+
+
+
+#plt.plot(xarr, yarr , marker='o', s=1, alpha=.01, c='r',)
+#plt.plot(xarr2, yarr2 , marker='o', s=1, alpha=.01, c='b')i
+
+plt.plot(xarr, yarr, 'r.', alpha=.1 )
+plt.plot(xarr2, yarr2 , 'b.', alpha =.1, aa=True)
+
+plt.scatter(-test.mu2, 0 , marker='o', c='y')
+plt.scatter(test.mu1, 0 , marker='o', c='m')
+
+#plt.scatter(test.returnXArray(cut),test.returnYArray(cut) , marker='.', c='r')
+#plt.scatter(test.returnXArray(100),test.returnYArray(100) ,  'r-',alpha=0.1)
 plt.title("xy position of asteroid")
 plt.xlabel("x")
 plt.ylabel("y")
