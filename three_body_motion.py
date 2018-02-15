@@ -67,20 +67,25 @@ class Asteriod:
 
         twoPi = 1
 
-        theta = twoPi*time
-        costheta = math.cos(theta)
-        sintheta = math.sin(theta)
+        #theta = twoPi*time
+        #costheta = math.cos(theta)
+        #sintheta = math.sin(theta)
 
-        xp = x1*costheta -y1*sintheta
-        yp = y1*costheta + x1*sintheta
+        #xp = x1*costheta -y1*sintheta
+        #yp = y1*costheta + x1*sintheta
 
+        #vxp = U1*costheta - x1*sintheta*twoPi - V1*sintheta - y1*costheta*twoPi
+        #vyp = V1*costheta - y1*sintheta*twoPi + U1*sintheta + x1*costheta*twoPi
+
+
+        #lines above are a coordiante transform, but today walking to the department, I realized that I could write it like this:
+       
+
+        kineticEnergy = .5*(math.pow( (U1 - twoPi*y1),2) + math.pow((V1 + twoPi*x1),2) )
         
+        #more elegant, and probably more computationally efficent with no cosine or sine calc. 
 
-        vxp = U1*costheta - x1*sintheta*twoPi - V1*sintheta - y1*costheta*twoPi
-        vyp = V1*costheta - y1*sintheta*twoPi + U1*sintheta + x1*costheta*twoPi
-
-
-        energy =  .5*vxp*vxp + .5*vyp*vyp  -1.0/self.returnR1(x1,y1) -self.jupiterMass/self.returnR2(x1,y1) 
+        energy =  kineticEnergy  -1.0/self.returnR1(x1,y1) -self.jupiterMass/self.returnR2(x1,y1) 
         return energy
 
     def returnVelocity(self,x1,y1,U1,V1, time):
@@ -207,7 +212,7 @@ class Asteriod:
 
         energy = self.returnEnergy(x1,y1,U1,V1, currentTime)
         dEnergy = (energy - self.energy[currentStep])/self.timeStep[currentStep]
-        if dEnergy < -50: dEnergy = 0
+        if dEnergy < -600: dEnergy = 0
         self.dEnergy.append(dEnergy)
 
         self.energy.append(energy)
@@ -279,11 +284,11 @@ class Asteriod:
     def returnDenergyArray(self,skip):
         return self.dEnergy[::skip]
 
-test = Asteriod(-.51,.88,0.026,0.015, False)
+#test = Asteriod(-.51,.88,0.026,0.015, False)
 #test = Asteriod(-.52,.91,0.65,0.037, False)
 #test = Asteriod(-.52,.92,0.078,0.043, False)
-#test = Asteriod(-.51,.88,-0.026,-0.015, False)
-#test = Asteriod(-.53,.92,0.078,0.043, False)
+test = Asteriod(-.51,.88,-0.026,-0.015, False)
+#test2 = Asteriod(-.53,.92,0.078,0.043, False)
 
 
 
@@ -306,17 +311,17 @@ test.printPos()
 length = len(test.returnXArray(1))
 
 cut = int(length/500000)
-cut = 8
+#cut = 8
 
 length = len(test.returnXArray(cut))
 
 xarr = test.returnXArray(cut)
 yarr = test.returnYArray(cut)
 
-energy = test.returnEnergyArray(cut)
-denergy = test.returnDenergyArray(cut)
-velocity = test.returnVelocityArray(cut)
-distance = test.returnDistanceArray(cut)
+energy = test.returnEnergyArray(cut*1)
+denergy = test.returnDenergyArray(cut*1)
+velocity = test.returnVelocityArray(cut*1)
+distance = test.returnDistanceArray(cut*1)
 
 #xarr2 = test2.returnXArray(cut*20)
 #yarr2 = test2.returnYArray(cut*20)
@@ -347,19 +352,21 @@ print length
 
 
 #plt.scatter(xarr, yarr , marker='.', alpha=.01, c='r',)
-##plt.plot(xarr2, yarr2 , marker='o', s=1, alpha=.01, c='b')i
-#
-##plt.plot(xarr, yarr, 'r-', alpha=.1 )
-##plt.plot(xarr2, yarr2 , 'b-', alpha =.1, aa=True)
-#
-##plt.axis([-.65, -.45, .7, .9]) #tip for one
-##plt.axis([-1.07, -.93, .3, -.3]) #center for one
-##plt.axis([-.1, .2, -1.1, -.9]) #tip for two
+#plt.scatter(xarr2, yarr2 , marker='.', alpha=.01, c='b',)
+
+#plt.plot(xarr2, yarr2 , marker='o', s=1, alpha=.01, c='b')i
+
+#plt.plot(xarr, yarr, 'r-', alpha=.1 )
+#plt.plot(xarr2, yarr2 , 'b-', alpha =.1, aa=True)
+
+#plt.axis([-.65, -.45, .7, .9]) #tip for one
+#plt.axis([-1.07, -.93, .3, -.3]) #center for one
+#plt.axis([-.1, .2, -1.1, -.9]) #tip for two
 #plt.axis([.85, 1.15, -.15, .15]) #jupiter
-#
-#
+
+
 #plt.scatter(-test.mu2, 0 , marker='o', c='y')
-#plt.scatter(test.mu1, 0 , marker='o', c='m')
+##plt.scatter(test.mu1, 0 , marker='o', c='m')
 #
 ##plt.scatter(test.returnXArray(cut),test.returnYArray(cut) , marker='.', c='r')
 ##plt.scatter(test.returnXArray(100),test.returnYArray(100) ,  'r-',alpha=0.1)
@@ -367,14 +374,15 @@ print length
 #plt.xlabel("x")
 #plt.ylabel("y")
 #plt.grid(True)
-
-#plt.savefig('output/xy_position_4_jupiter_zoom_bigger_1000.png'.format(totalTime))
-
-plt.clf()
+#
+#plt.savefig('output/xy_position_4+1.png'.format(totalTime))
+#
+#plt.clf()
 
 plt.scatter(velocity, distance , marker='.', alpha=.01, c='r',)
 
 #plt.grid(True)
+plt.semilogy()
 plt.title("velocity vs distance to jupiter")
 plt.xlabel("velocity")
 plt.ylabel("distance to jupiter")
@@ -382,13 +390,14 @@ plt.ylabel("distance to jupiter")
 #plt.show()
 
 
-plt.savefig('output/velocity_juptier_1.png'.format(totalTime))
+plt.savefig('output/velocity_juptier_4_log.png'.format(totalTime))
 
 plt.clf()
 
 plt.scatter(energy, distance , marker='.', alpha=.01, c='r',)
 
 #plt.grid(True)
+plt.semilogy()
 plt.title("energy vs distance to jupiter")
 plt.xlabel("energy")
 plt.ylabel("distance to jupiter")
@@ -396,13 +405,14 @@ plt.ylabel("distance to jupiter")
 #plt.show()
 
 
-plt.savefig('output/energy_juptier_1.png'.format(totalTime))
+plt.savefig('output/energy_juptier_4_log.png'.format(totalTime))
 
 plt.clf()
 
 plt.scatter(denergy, distance[:-1] , marker='.', alpha=.01, c='r',)
 
 #plt.grid(True)
+plt.semilogy()
 plt.title("d(energy)/dt vs distance to jupiter")
 plt.xlabel("d(energy)/dt")
 plt.ylabel("distance to jupiter")
@@ -410,7 +420,7 @@ plt.ylabel("distance to jupiter")
 #plt.show()
 
 
-plt.savefig('output/dEnergy_juptier_1.png'.format(totalTime))
+plt.savefig('output/dEnergy_juptier_4_log.png'.format(totalTime))
 
 
 
