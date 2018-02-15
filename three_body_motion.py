@@ -96,21 +96,11 @@ class Asteriod:
 
         twoPi = 1
 
-        theta = twoPi*time
-        costheta = math.cos(theta)
-        sintheta = math.sin(theta)
-
-        xp = x1*costheta -y1*sintheta
-        yp = y1*costheta + x1*sintheta
-
-        
-
-        vxp = U1*costheta - x1*sintheta*twoPi - V1*sintheta - y1*costheta*twoPi
-        vyp = V1*costheta - y1*sintheta*twoPi + U1*sintheta + x1*costheta*twoPi
+        vSquared = math.pow( (U1 - twoPi*y1),2) + math.pow((V1 + twoPi*x1),2) 
 
 
-        energy =  vxp*vxp + .5*vyp*vyp  #-1.0/self.returnR1(x1,y1) -self.jupiterMass/self.returnR2(x1,y1) 
-        return energy
+        velocity =  math.sqrt(vSquared) 
+        return velocity
 
 
 
@@ -382,7 +372,7 @@ print length
 plt.scatter(velocity, distance , marker='.', alpha=.01, c='r',)
 
 #plt.grid(True)
-plt.semilogy()
+#plt.semilogy()
 plt.title("velocity vs distance to jupiter")
 plt.xlabel("velocity")
 plt.ylabel("distance to jupiter")
