@@ -82,8 +82,8 @@ class Asteriod:
        
 
         kineticEnergy = .5*(math.pow( (U1 - twoPi*y1),2) + math.pow((V1 + twoPi*x1),2) )
-        
-        #more elegant, and probably more computationally efficent with no cosine or sine calc. 
+
+        #more elegant, and probably more computationally efficent with no cosine or sine calc. e.g. just add rotational component to velocity at a point, you can also derive this by solving vxp^2+ vyp^2
 
         energy =  kineticEnergy  -1.0/self.returnR1(x1,y1) -self.jupiterMass/self.returnR2(x1,y1) 
         return energy
