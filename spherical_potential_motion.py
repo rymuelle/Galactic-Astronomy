@@ -42,7 +42,7 @@ class Asteriod:
         return radius*V*V - self.force(10.,1.0,1.0,radius)
 
     def functionV(self,radius,phi,U,V,t):
-        return 0
+        return radius*radius*V
 
 
     def __init__(self, radius0, phi0, U0, V0, verbose):
@@ -141,7 +141,7 @@ class Asteriod:
    
     def printPos(self):
         currentStep = len(self.radius) - 1
-        print "radius, {} phi, {} U, {} V {} time {} energy {} angularMomentum {} force {}".format(self.radius[currentStep], self.phi[currentStep], self.U[currentStep], self.V[currentStep], self.time[currentStep], self.energy[currentStep], self.radius[currentStep]*self.radius[currentStep]*self.V[currentStep], self.force(10.,1.0,1.0,self.radius[currentStep]))
+        print "radius, {} phi, {} U, {} V {} time {} energy {} angularMomentum {} force {}".format(self.radius[currentStep], self.phi[currentStep], self.U[currentStep], self.V[currentStep], self.time[currentStep], self.energy[currentStep], self.radius[currentStep]*self.radius[currentStep]*self.V[currentStep], self.force(1.0,1.0,1.0,self.radius[currentStep]))
 
     def returnForce(self):
         currentStep = len(self.radius) - 1
@@ -175,7 +175,15 @@ class Asteriod:
 
 
 
-test = Asteriod(1.0,0.0,0.0,4*3.1415*0.1, False)
+angularMomentum = math.sqrt(4*3.1415)*.05
+
+radius = 1.0 
+
+velocity = angularMomentum/(radius*radius)
+
+
+test = Asteriod(radius,0.0,0.0,velocity, False)
+
 
 
 
@@ -205,10 +213,14 @@ test.printPos()
 
 ax = plt.subplot(111, projection='polar')
 ax.plot(test.returnYArray(10), test.returnXArray(10))
-'''ax.set_rmax(2)
-ax.set_rticks([0.5, 1, 1.5, 2])  # less radial ticks
-ax.set_rlabel_position(-22.5)  # get radial labels away from plotted line '''
+'''ax.set_rmax(2)'''
+ax.set_rlabel_position(-22.5)  # get radial labels away from plotted line 
+
 ax.grid(True)
 
-ax.set_title("A line plot on a polar axis", va='bottom')
-plt.show()
+potential = "NFW"
+if test.Burkert == True: potential = "Burkert"
+
+ax.set_title("Potential: {} angular momentum: {}".format(potential,angularMomentum) , va='bottom')
+#plt.show()
+plt.savefig("output_galactic_orbits/orbit_{}_angularMomentum_{}.png".format(potential,angularMomentum))
