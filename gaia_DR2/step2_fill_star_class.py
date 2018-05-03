@@ -32,22 +32,34 @@ AType=pd.read_csv('output_shuffled_type_A.csv'.format(name), sep=',')
 
 nRows = len(allStars.index)
 
-allStars = allStars.dropna(axis=0,how='any')
+def filterStars(lPD):
 
-#section 2.1 for filters: https://arxiv-org.lib-ezproxy.tamu.edu:9443/pdf/1804.09378.pdf
+    lPD = lPD.dropna(axis=0,how='any')
+    
+    #section 2.1 for filters: https://arxiv-org.lib-ezproxy.tamu.edu:9443/pdf/1804.09378.pdf
+    
+    #astrometric excess noise filter
+        
+    lPD = lPD.loc[np.sqrt(lPD['astrometric_chi2_al']/(lPD['astrometric_n_good_obs_al'] -5 ) ) < 1.2*np.maximum(1, np.exp(-0.2*(lPD['phot_g_mean_mag'] - 19.5))) ]
+                                                                                                                    
+    #filter paralax for mag
+    
+    lPD = lPD.loc[(lPD['parallax_over_error'] > 10)]
+    
+    #filter phot_g_mean_flux_over_error
+    
+    lPD = lPD.loc[(lPD['phot_g_mean_flux_over_error'] > 50) & (lPD['phot_rp_mean_flux_over_error'] > 20) & (lPD['phot_bp_mean_flux_over_error'] > 20)]
 
-#astrometric excess noise filter
-	
-allStars = allStars.loc[np.sqrt(allStars['astrometric_chi2_al']/(allStars['astrometric_n_good_obs_al'] -5 ) ) < 1.2*np.maximum(1, np.exp(-0.2*(allStars['phot_g_mean_mag'] - 19.5))) ]
-																												
-#filter paralax for mag
+    #empirically defined locus cut
 
-allStars = allStars.loc[(allStars['parallax_over_error'] > 10)]
 
-#filter phot_g_mean_flux_over_error
+    lPD = lPD.loc[(lPD['phot_bp_rp_excess_factor'] > 1.0+.015*np.power (lPD['phot_bp_mean_mag'] - lPD['phot_rp_mean_mag'], 2 ) ) & (lPD['phot_bp_rp_excess_factor'] < 1.3+.006*np.power (lPD['phot_bp_mean_mag'] - lPD['phot_rp_mean_mag'], 2 ) )]
 
-allStars = allStars.loc[(allStars['phot_g_mean_flux_over_error'] > 50) & (allStars['phot_rp_mean_flux_over_error'] > 20) & (allStars['phot_bp_mean_flux_over_error'] > 20)]
+    return lPD
 
+allStars = filterStars(allStars)
+
+AType = filterStars(AType)
 
 #strip down to the variables we need
 #allStars = allStars[["teff_val", "ra", "dec","parallax" , "radial_velocity", "pmdec", "pmra" ]]
@@ -77,6 +89,10 @@ temp = allStars['teff_val']
 
 GBmGR = allStars['bp_rp']
 
+MG = allStars['phot_g_mean_mag'] + 5 + 5*np.log10(allStars['parallax']/1000.)
+
+#print MG
+
 plt.scatter(temp, lumi, alpha=.1)
 plt.semilogy()
 plt.semilogx()
@@ -96,6 +112,19 @@ plt.title("")
 plt.xlabel("Gb - Gr")
 plt.ylabel("lumi [Lo]")
 plt.savefig("output/Hertzsprung-Russell_GB_GR_{}.png".format(name))
+
+plt.clf()
+
+
+plt.scatter(GBmGR, MG, alpha=.1)
+#plt.hist2d(GBmGR, lumi, bins=1000, norm=LogNorm())
+#plt.colorbar()
+#plt.semilogy()
+#plt.semilogx()
+plt.title("")
+plt.xlabel("Gb - Gr")
+plt.ylabel("Mg")
+plt.savefig("output/Hertzsprung-Russell_GBmGR_Mg_{}.png".format(name))
 
 plt.clf()
 
