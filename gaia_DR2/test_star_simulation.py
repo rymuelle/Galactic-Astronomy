@@ -5,6 +5,9 @@ from timeit import default_timer as timer
 import matplotlib.pyplot as plt
 import astropy.coordinates as coord
 import astropy.units as u
+import pickle
+
+from scipy.optimize import curve_fit
 
 def Integral(lPop, max_val, binSize):
     if max_val > height:
@@ -62,12 +65,26 @@ def computeDensity(lPop, p0, sig0, nBins, max_height, lphi, lphi_total):
     return lPop
 
 
-def tracerPopulation(nBins, density_z_0, velocity_0, ltracker_pop, velocity_max, lphi_total):
-    vz = np.linspace(0, 80, nBins)
-    ltracker_pop = velocity_0*np.sqrt(vz*vz + 2*lphi_total)
-    binSize = float(velocity_max)/nBins
-    #for i in range(nBins):
-        #print density_z_0*Integral(ltracker_pop, i, binSize)
+def tracerPopulation(nBins, density_z_0, velocity_0, ltracker_pop, velocity_max, lphi_total, ltracerFits,bin_centres):
+    for i in range(len(ltracerFits)):
+        vz = np.linspace(0, velocity_max, nBins)
+        vz_val = np.sqrt(vz*vz + 2*lphi_total)
+        #f_for_integration = gauss(bin_centres, *ltracerFits[i])
+        #plt.plot(bin_centres, f_for_integration, label='Fitted data')
+        #plt.show()
+        ltracker_pop[i] = gauss(vz_val, *ltracerFits[i])
+        #plt.plot(vz, ltracker_pop)
+        #plt.show()
+
+        binSize = float(velocity_max)/nBins
+
+        for count in range(nBins):
+            if i ==0:
+                ltracker_pop[i][count] = ltracker_pop[i][count]*binSize
+            if i > 0:
+                ltracker_pop[i][count] = ltracker_pop[i][count] + ltracker_pop[i-1][count]
+        #for i in range(nBins):
+        #    ltracker_pop =  density_z_0*Integral(ltracker_pop, i, binSize)
     #print ltracker_pop
 
 
@@ -85,16 +102,69 @@ print "time", e-s
 #pop_sig0 = 4 #km/s
 #pop_p0 = .01 #solarmass/parsecs^3
 
+
+
+# Define model function to be used to fit to the data above:
+def gauss(x, *p):
+   # A, mu, sigma = p
+   # return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+    A, mu, sigma = p
+    return A*np.exp(-(x-0)**2/(2.*sigma**2))
+
+def fit_f_v_z(hist, bin_edges):
+    # Define some test data which is close to Gaussian
+    
+    bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+    
+    # p0 is the initial guess for the fitting coefficients (A, mu and sigma above)
+    p0 = [1., 0., 1.]
+    
+    coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0)
+    
+    # Get the fitted curve
+    hist_fit = gauss(bin_centres, *coeff)
+    
+    plt.plot(bin_centres, hist, label='Test data')
+    plt.plot(bin_centres, hist_fit, label='Fitted data')
+    
+    # Finally, lets get the fitting parameters, i.e. the mean and standard deviation:
+    print 'Fitted mean = ', coeff[1]
+    print 'Fitted height = ', coeff[0]
+    print 'Fitted standard deviation = ', coeff[2]
+    
+    plt.show()
+
+    return coeff
+
 nBins = 100
 height = 400 # parsecs
 binSize =  float(height)/100
 
-n_pop = 2
-#pop = [[], []]
+#get functions fit from data:
+with open('f_vz_profile.pkl', 'rb') as f:
+    f_vz = pickle.load(f) # 1 is v_zG 2: v_zF 3: v_zA
+
+vz_max = 120
+vz_bin = np.linspace(0, vz_max, 101)
+print f_vz[0]
+
+tracerFits = []
+tracerFits.append(fit_f_v_z(f_vz[0], vz_bin))
+tracerFits.append(fit_f_v_z(f_vz[1], vz_bin))
+tracerFits.append(fit_f_v_z(f_vz[2], vz_bin))
+
+print tracerFits
 
 n_tracker = 3
-velocity_max = 80
 tracker_pop = np.zeros((n_tracker, nBins))
+
+
+nBins = 100
+height = 400 # parsecs
+binSize =  float(height)/100
+
+
+
 
 density_DM = .015
 hdd = 6.0 #5 pc
@@ -113,8 +183,8 @@ n_tracker = 3
 velocity_max = 80
 tracker_pop = np.zeros((n_tracker, nBins))
 
-
-
+n_pop = 5
+#pop = [[], []]
 
 phi_total = np.zeros( nBins)
 phi = np.zeros((n_pop, nBins)) # +1 for the DM distribution
@@ -122,8 +192,8 @@ pop = np.zeros((n_pop, nBins))
 
 pop_init = np.zeros((n_pop , nBins))
 
-pop_sig0 = [4, 3]
-pop_p0 = [.01, .02]
+pop_sig0 = [3.7, 7.1,22.1,39.0,15.5]
+pop_p0 = [.0104,.0277,.0073,.0005,.0006]
 
 
 if (len(pop_sig0) != n_pop) or (len(pop_p0) != n_pop):
@@ -147,20 +217,30 @@ for i in range(5):
     computePotential(pop, pop_p0, pop_sig0, nBins, height, phi, phi_total, phi_DM)
     computeDensity(pop, pop_p0, pop_sig0, nBins, height, phi, phi_total)
 
-tracerPopulation(nBins, .1, 60, tracker_pop, velocity_max, phi_total)
+tracerPopulation(nBins, .1, vz_max, tracker_pop, velocity_max, phi_total, tracerFits, vz_bin)
+
+
+#print tracker_pop
 
 e = timer()
 print "time", e-s
 
 z = np.linspace(0, height, nBins)
 
-print phi_total
+#print phi_total
 
-plt.plot(z, phi[0], z, phi[1], z, phi_total, z, phi_DM)
-#plt.plot(z, pop_init[0], z,  pop_init[1])
+#plt.plot(z, phi[0], z, phi[1], z, phi_total, z, phi_DM)
+#plt.plot(z, pop_init[0], z,  pop_init[1],z, tracker_pop[0], z, tracker_pop[1], z, tracker_pop[2])
+plt.plot(z, tracker_pop[0], z, tracker_pop[1], z, tracker_pop[2])
 #plt.plot(z, pop[0], z,  pop[1], z ,pop_DM)
 #plt.plot(z,phi[1])
 #plt.plot(z,pop[0])
 #plt.plot(z,pop[1])
+
+print tracker_pop
+
+fit_f_v_z(tracker_pop[0], vz_bin)
+fit_f_v_z(tracker_pop[1], vz_bin)
+fit_f_v_z(tracker_pop[2], vz_bin)
 
 plt.show()
