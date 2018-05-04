@@ -46,23 +46,11 @@ def computePotential(lPop, p0, sig0, nBins, max_height, lphi, lphi_total, DM_phi
     for count in range(len(lPop)):
         
         population_phi(lPop[count], lphi[count], binSize)
-        #first integral
-        '''
-        for i in range(len(lPop[count])):
-            lphi[count][i] = Integral(lPop[count], i, binSize)
-
-            #print lphi[count][i]
-
-        for i in range(len(lphi[count])):
-            #print lphi[count][i], lPop[count][i]
-            if i > 0:
-                lphi[count][i] = lphi[count][i] + lphi[count][i-1]
-        '''
 
     for i in range(len(lPop[0])):
         sum_phi = 0
         for count in range(len(lphi)):
-            sum_phi = sum_phi + lphi[count][i]
+            sum_phi = sum_phi + lphi[count][i] + DM_phi[i]
 
         lphi_total[i] = 4*pi*G_const*sum_phi
 
@@ -110,7 +98,7 @@ tracker_pop = np.zeros((n_tracker, nBins))
 
 density_DM = .015
 hdd = 6.0 #5 pc
-Edd = .01 #solar masses/pc^3
+Edd = 4.0 #solar masses/pc^3
 
 z = np.linspace(0, height, nBins)
 #pop_DM = Edd/(4*hdd)/np.power(np.cosh(z/(hdd*2)),2) 
@@ -119,7 +107,7 @@ phi_DM = np.zeros(nBins)
 
 
 population_phi(pop_DM,phi_DM, binSize)
-print phi_DM
+#print phi_DM
 
 n_tracker = 3
 velocity_max = 80
@@ -156,8 +144,7 @@ fillInitialConditionsArray(pop_init, pop_p0, pop_sig0, nBins, height)
 s = timer()
 
 for i in range(5):
-    DM_pot = 5
-    computePotential(pop, pop_p0, pop_sig0, nBins, height, phi, phi_total, DM_pot)
+    computePotential(pop, pop_p0, pop_sig0, nBins, height, phi, phi_total, phi_DM)
     computeDensity(pop, pop_p0, pop_sig0, nBins, height, phi, phi_total)
 
 tracerPopulation(nBins, .1, 60, tracker_pop, velocity_max, phi_total)
@@ -166,6 +153,8 @@ e = timer()
 print "time", e-s
 
 z = np.linspace(0, height, nBins)
+
+print phi_total
 
 plt.plot(z, phi[0], z, phi[1], z, phi_total, z, phi_DM)
 #plt.plot(z, pop_init[0], z,  pop_init[1])
