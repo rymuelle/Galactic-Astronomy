@@ -29,6 +29,7 @@ n_pop = 2
 phi_total = np.zeros( nBins)
 phi = np.zeros((n_pop, nBins))
 pop = np.zeros((n_pop, nBins))
+pop_init = np.zeros((n_pop, nBins))
 
 pop_sig0 = [4, 3]
 pop_p0 = [.01, .02]
@@ -81,18 +82,33 @@ def computePotential(lPop, p0, sig0, nBins, max_height, lphi, lphi_total):
 
         lphi_total[i] = 4*pi*G_const*sum_phi
 
+def computeDensity(lPop, p0, sig0, nBins, max_height, lphi, lphi_total):
+    for count in range(len(lPop)):
+        print "p0 {}, sigma {}".format(lPop[count][0], pop_sig0[count])
 
-    #phi.append(int_value)
+        lPop[count] = lPop[count][0]*np.exp(-lphi_total/pop_sig0[count])
+
 
 
 
 fillInitialConditionsArray(pop, pop_p0, pop_sig0, nBins, height)
-computePotential(pop, pop_p0, pop_sig0, nBins, height, phi, phi_total)
+fillInitialConditionsArray(pop_init, pop_p0, pop_sig0, nBins, height)
 
+
+s = timer()
+
+
+computePotential(pop, pop_p0, pop_sig0, nBins, height, phi, phi_total)
+computeDensity(pop, pop_p0, pop_sig0, nBins, height, phi, phi_total)
+
+
+e = timer()
+print "time", e-s
 
 z = np.linspace(0, height, nBins)
-plt.plot(z, phi[0], z, phi[1], z, phi_total)
-#plt.plot(z, pop[0], z,  pop[1])
+#plt.plot(z, phi[0], z, phi[1], z, phi_total)
+plt.plot(z, pop_init[0], z,  pop_init[1])
+plt.plot(z, pop[0], z,  pop[1])
 #plt.plot(z,phi[1])
 #plt.plot(z,pop[0])
 #plt.plot(z,pop[1])
