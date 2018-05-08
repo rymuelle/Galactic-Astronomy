@@ -53,9 +53,9 @@ def computePotential(lPop, p0, sig0, nBins, max_height, lphi, lphi_total, DM_phi
     for i in range(len(lPop[0])):
         sum_phi = 0
         for count in range(len(lphi)):
-            sum_phi = sum_phi + lphi[count][i] + DM_phi[i]
+            sum_phi = sum_phi + lphi[count][i] 
 
-        lphi_total[i] = 4*pi*G_const*sum_phi
+        lphi_total[i] = 4*pi*G_const*sum_phi + DM_phi[i]
 
 def computeDensity(lPop, p0, sig0, nBins, max_height, lphi, lphi_total):
     for count in range(len(lPop)):
@@ -111,7 +111,7 @@ def gauss(x, *p):
     A, mu, sigma = p
     return A*np.exp(-(x-0)**2/(2.*sigma**2))
 
-def fit_f_v_z(hist, bin_edges):
+def fit_f_v_z(hist, bin_edges, name):
     # Define some test data which is close to Gaussian
     
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
@@ -126,15 +126,21 @@ def fit_f_v_z(hist, bin_edges):
     
     plt.plot(bin_centres, hist, label='Test data')
     plt.plot(bin_centres, hist_fit, label='Fitted data')
+    plt.xlabel("velocity [km/s]")
+    plt.ylabel("count")
+    plt.title(name)
     
     # Finally, lets get the fitting parameters, i.e. the mean and standard deviation:
     print 'Fitted mean = ', coeff[1]
     print 'Fitted height = ', coeff[0]
     print 'Fitted standard deviation = ', coeff[2]
-    
-    plt.show()
+    #plt.show()
+    plt.savefig("output/f_v_z_{}.png".format(name))
 
-    return coeff
+    return coeff 
+
+
+
 
 nBins = 100
 height = 400 # parsecs
@@ -144,18 +150,33 @@ binSize =  float(height)/100
 with open('f_vz_profile.pkl', 'rb') as f:
     f_vz = pickle.load(f) # 1 is v_zG 2: v_zF 3: v_zA
 
-vz_max = 120
+
+vz_max = 50
 vz_bin = np.linspace(0, vz_max, 101)
-print f_vz[0]
+weight_array = (vz_bin[:-1] + vz_bin[1:])/2
+for count, bins in enumerate(weight_array):
+    if bins < 10:
+        weight_array[count] = 10
+print weight_array
+f_vz[0] = f_vz[0]*(weight_array)
+f_vz[1] = f_vz[1]*(weight_array)
+f_vz[2] = f_vz[2]*(weight_array)
 
+print "tracer fits -------"
 tracerFits = []
-tracerFits.append(fit_f_v_z(f_vz[0], vz_bin))
-tracerFits.append(fit_f_v_z(f_vz[1], vz_bin))
-tracerFits.append(fit_f_v_z(f_vz[2], vz_bin))
+tracerFits.append(fit_f_v_z(f_vz[0], vz_bin, "GType"))
 
-print tracerFits
+plt.clf()
+tracerFits.append(fit_f_v_z(f_vz[1], vz_bin, "FType"))
 
-n_tracker = 3
+plt.clf()
+tracerFits.append(fit_f_v_z(f_vz[2], vz_bin, "AType"))
+
+plt.clf()
+
+
+
+n_tracker = 2
 tracker_pop = np.zeros((n_tracker, nBins))
 
 
@@ -166,24 +187,26 @@ binSize =  float(height)/100
 
 
 
-density_DM = .015
+density_DM = .01
 hdd = 6.0 #5 pc
 Edd = 4.0 #solar masses/pc^3
 
 z = np.linspace(0, height, nBins)
 #pop_DM = Edd/(4*hdd)/np.power(np.cosh(z/(hdd*2)),2) 
-pop_DM = Edd/(4*hdd)/np.power(np.cosh(z/(hdd*2)),2) 
+pop_DM = Edd/(4*hdd)/np.power(np.cosh(z/(hdd*2)),2) + density_DM
+pop_DM_nodisk = np.linspace(density_DM, density_DM, nBins)
 phi_DM = np.zeros(nBins)
+phi_DM_nodisk = np.zeros(nBins)
 
 
 population_phi(pop_DM,phi_DM, binSize)
-#print phi_DM
+population_phi(pop_DM_nodisk,phi_DM_nodisk, binSize)
 
 n_tracker = 3
 velocity_max = 80
 tracker_pop = np.zeros((n_tracker, nBins))
 
-n_pop = 5
+n_pop = 12
 #pop = [[], []]
 
 phi_total = np.zeros( nBins)
@@ -192,10 +215,10 @@ pop = np.zeros((n_pop, nBins))
 
 pop_init = np.zeros((n_pop , nBins))
 
-pop_sig0 = [3.7, 7.1,22.1,39.0,15.5]
-pop_p0 = [.0104,.0277,.0073,.0005,.0006]
+pop_sig0 = [3.7, 7.1,22.1,39.0,15.5,7.5,12.0,18.0,18.5,18.5,20.0,20.0]
+pop_p0 = [.0104,.0277,.0073,.0005,.0006,.0018,.0018,.0029,.0072,.0216,.0056,.0015]
 
-
+print len(pop_sig0),len(pop_p0)
 if (len(pop_sig0) != n_pop) or (len(pop_p0) != n_pop):
     print "wrong dimensions"
 
@@ -213,7 +236,7 @@ fillInitialConditionsArray(pop_init, pop_p0, pop_sig0, nBins, height)
 
 s = timer()
 
-for i in range(5):
+for i in range(1):
     computePotential(pop, pop_p0, pop_sig0, nBins, height, phi, phi_total, phi_DM)
     computeDensity(pop, pop_p0, pop_sig0, nBins, height, phi, phi_total)
 
@@ -229,18 +252,87 @@ z = np.linspace(0, height, nBins)
 
 #print phi_total
 
-#plt.plot(z, phi[0], z, phi[1], z, phi_total, z, phi_DM)
+plt.clf()
+plt.plot(z, phi_total, z, phi_DM)
+plt.xlabel("z [pc]")
+plt.ylabel("potential".format() )
+plt.savefig("output/potential_edd_{}.png".format(Edd))
+
+
+plt.clf()
+plt.plot(z, pop[0], z, pop_DM)
+plt.xlabel("z [pc]")
+plt.ylabel("density [solar masses/pc^3]".format() )
+plt.savefig("output/density_edd_{}.png".format(Edd))
+
 #plt.plot(z, pop_init[0], z,  pop_init[1],z, tracker_pop[0], z, tracker_pop[1], z, tracker_pop[2])
-plt.plot(z, tracker_pop[0], z, tracker_pop[1], z, tracker_pop[2])
+#plt.plot(z, tracker_pop[0], z, tracker_pop[1], z, tracker_pop[2])
 #plt.plot(z, pop[0], z,  pop[1], z ,pop_DM)
 #plt.plot(z,phi[1])
 #plt.plot(z,pop[0])
 #plt.plot(z,pop[1])
 
-print tracker_pop
+#print tracker_pop
+print "model results -------"
 
-fit_f_v_z(tracker_pop[0], vz_bin)
-fit_f_v_z(tracker_pop[1], vz_bin)
-fit_f_v_z(tracker_pop[2], vz_bin)
+plt.clf()
 
-plt.show()
+bin_centres = (vz_bin[:-1] + vz_bin[1:])/2
+fit_f_v_z(tracker_pop[0], vz_bin, "GType density model {}".format(Edd))
+plt.clf()
+
+plt.plot(bin_centres, tracker_pop[0], label='Thin Disk, hDD = {}, Edd = {}'.format(hdd, Edd))
+
+tracerPopulation(nBins, .1, vz_max, tracker_pop, velocity_max, phi_DM_nodisk, tracerFits, vz_bin)
+
+plt.plot(bin_centres, tracker_pop[0], label='No Thin Disk')
+plt.legend()
+plt.xlabel("velocity [km/s]")
+plt.ylabel("count")
+plt.title("Simulation of G Type stars")
+plt.savefig("output/GType_simulation.png")
+
+plt.clf()
+fit_f_v_z(tracker_pop[0], vz_bin, "GType density model {}".format(Edd))
+plt.clf()
+tracerPopulation(nBins, .1, vz_max, tracker_pop, velocity_max, phi_total, tracerFits, vz_bin)
+fit_f_v_z(tracker_pop[1], vz_bin, "FType density model {}".format(Edd))
+plt.clf()
+
+plt.plot(bin_centres, tracker_pop[1], label='Thin Disk, hDD = {}, Edd = {}'.format(hdd, Edd))
+
+tracerPopulation(nBins, .1, vz_max, tracker_pop, velocity_max, phi_DM_nodisk, tracerFits, vz_bin)
+
+
+plt.plot(bin_centres, tracker_pop[1], label='No Thin Disk')
+plt.legend()
+plt.xlabel("velocity [km/s]")
+plt.ylabel("count")
+plt.title("Simulation of F Type stars")
+plt.savefig("output/FType_simulation.png")
+
+
+fit_f_v_z(tracker_pop[1], vz_bin, "FType density model {}".format(Edd))
+plt.clf()
+tracerPopulation(nBins, .1, vz_max, tracker_pop, velocity_max, phi_total, tracerFits, vz_bin)
+fit_f_v_z(tracker_pop[2], vz_bin, "AType density model {}".format(Edd))
+plt.clf()
+
+plt.plot(bin_centres, tracker_pop[1], label='Thin Disk, hDD = {}, Edd = {}'.format(hdd, Edd))
+
+tracerPopulation(nBins, .1, vz_max, tracker_pop, velocity_max, phi_DM_nodisk, tracerFits, vz_bin)
+
+
+plt.plot(bin_centres, tracker_pop[1], label='No Thin Disk')
+plt.legend()
+plt.xlabel("velocity [km/s]")
+plt.ylabel("count")
+plt.title("Simulation of A Type stars")
+plt.savefig("output/AType_simulation.png")
+
+
+
+fit_f_v_z(tracker_pop[2], vz_bin, "AType density model {}".format(Edd))
+plt.clf()
+
+#plt.show()

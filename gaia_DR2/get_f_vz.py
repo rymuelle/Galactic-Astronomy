@@ -25,9 +25,26 @@ nRows = 10000
 
 name = "preselection"
 
+files  = ["output_shuffled_w_preselection100000.csv"]
+
+files = ["GaiaSource_5933051914143228928_6714230117939284352_preselection.csv",
+"GaiaSource_5502601873595430784_5933051501826387072_preselection.csv",
+"GaiaSource_6714230465835878784_6917528443525529728_preselection.csv",
+"GaiaSource_4475722064104327936_5502601461277677696_preselection.csv",
+"GaiaSource_2200921875920933120_3650804325670415744_preselection.csv",
+"GaiaSource_2851858288640_1584379458008952960_preselection.csv",
+"GaiaSource_1584380076484244352_2200921635402776448_2_preselection.csv",
+"GaiaSource_3650805523966057472_4475721411269270528_preselection.csv"]
+
+#files  = ["output_shuffled_w_preselection100000.csv"]
+
+df_from_each_file = (pd.read_csv(f) for f in files)
+allStars   = pd.concat(df_from_each_file, ignore_index=True)
+
+print len(allStars.index)
 
 #allStars=pd.read_csv('output_{}.csv'.format(name), sep=',', nrows=nRows)
-allStars=pd.read_csv('output_shuffled_w_preselection100000.csv'.format(name), sep=',', nrows=nRows)
+#allStars=pd.read_csv('output_shuffled_w_preselection100000.csv'.format(name), sep=',', nrows=nRows)
 
 AType=pd.read_csv('output_shuffled_type_A.csv'.format(name), sep=',')
 
@@ -39,29 +56,29 @@ def filterStars(lPD):
 
     #lPD = lPD.loc[ 1.0/lPD['parallax'] < 150 ]
 
-    lPD = lPD.loc[ np.abs(lPD['z']) < 25 ] #https://arxiv.org/pdf/1711.03103.pdf
+    lPD = lPD.loc[ np.abs(lPD['z']) < 20 ] #https://arxiv.org/pdf/1711.03103.pdf
 
     # drop na values
-    lPD = lPD.dropna(axis=0,how='any')
+    #lPD = lPD.dropna(axis=0,how='any')
     
     #section 2.1 for filters: https://arxiv-org.lib-ezproxy.tamu.edu:9443/pdf/1804.09378.pdf
     
     #astrometric excess noise filter
         
-    lPD = lPD.loc[np.sqrt(lPD['astrometric_chi2_al']/(lPD['astrometric_n_good_obs_al'] -5 ) ) < 1.2*np.maximum(1, np.exp(-0.2*(lPD['phot_g_mean_mag'] - 19.5))) ]
+    #lPD = lPD.loc[np.sqrt(lPD['astrometric_chi2_al']/(lPD['astrometric_n_good_obs_al'] -5 ) ) < 1.2*np.maximum(1, np.exp(-0.2*(lPD['phot_g_mean_mag'] - 19.5))) ]
                                                                                                                     
     #filter paralax for mag
     
-    lPD = lPD.loc[(lPD['parallax_over_error'] > 10)]
+    #lPD = lPD.loc[(lPD['parallax_over_error'] > 10)]
     
     #filter phot_g_mean_flux_over_error
     
-    lPD = lPD.loc[(lPD['phot_g_mean_flux_over_error'] > 50) & (lPD['phot_rp_mean_flux_over_error'] > 20) & (lPD['phot_bp_mean_flux_over_error'] > 20)]
+    #lPD = lPD.loc[(lPD['phot_g_mean_flux_over_error'] > 50) & (lPD['phot_rp_mean_flux_over_error'] > 20) & (lPD['phot_bp_mean_flux_over_error'] > 20)]
 
     #empirically defined locus cut
 
 
-    lPD = lPD.loc[(lPD['phot_bp_rp_excess_factor'] > 1.0+.015*np.power (lPD['phot_bp_mean_mag'] - lPD['phot_rp_mean_mag'], 2 ) ) & (lPD['phot_bp_rp_excess_factor'] < 1.3+.006*np.power (lPD['phot_bp_mean_mag'] - lPD['phot_rp_mean_mag'], 2 ) )]
+    #lPD = lPD.loc[(lPD['phot_bp_rp_excess_factor'] > 1.0+.015*np.power (lPD['phot_bp_mean_mag'] - lPD['phot_rp_mean_mag'], 2 ) ) & (lPD['phot_bp_rp_excess_factor'] < 1.3+.006*np.power (lPD['phot_bp_mean_mag'] - lPD['phot_rp_mean_mag'], 2 ) )]
 
     return lPD
 
@@ -168,7 +185,7 @@ plt.savefig("output/get_f_v_z_height_hist_{}.png".format(name))
 plt.clf()
 
 
-counts, bins, bars = plt.hist([np.abs(v_zG), np.abs(v_zF), np.abs(v_zA)], histtype='step',  color=['magenta', 'orange', 'red'], fill=False,  density=True, bins=100  )
+counts, bins, bars = plt.hist([np.abs(v_zG), np.abs(v_zF), np.abs(v_zA)], histtype='step',  color=['magenta', 'orange', 'red'], fill=False,  density=True, bins=100, range =[0,50]  )
 #plt.semilogy()
 
 plt.title("")
@@ -177,6 +194,28 @@ plt.ylabel("count")
 plt.savefig("output/get_f_v_z_velocity_hist_{}.png".format(name))
 
 plt.clf()
+
+#counts, bins, bars = plt.hist([np.abs(v_zG), np.abs(v_zF), np.abs(v_zA)], histtype='step',  color=['magenta', 'orange', 'red'], fill=False,  density=True, bins=100, range =[0,50]  )
+##plt.semilogy()
+#
+#plt.title("")
+#plt.xlabel("velocity [km/s]")
+#plt.ylabel("count")
+#plt.savefig("output/get_f_v_z_velocity_hist_{}.png".format(name))
+#
+#plt.clf()
+
+
+#counts, bins, bars = plt.hist([np.abs(v_zG), np.abs(v_zF)], histtype='step',  color=['magenta', 'orange'], fill=False,  density=True, bins=10, range =[0,50]  )
+##plt.semilogy()
+#
+#plt.title("")
+#plt.xlabel("velocity [km/s]")
+#plt.ylabel("count")
+#plt.savefig("output/get_f_v_z_velocity_hist_withoutA_{}.png".format(name))
+#
+#plt.clf()
+
 
 
 with open('f_vz_profile.pkl', 'wb') as f:
